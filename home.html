@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Home</title>
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: url('home.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      overflow-x: hidden;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -240px;
+      width: 240px;
+      height: 100%;
+      background: #e6ccb2;
+      backdrop-filter: blur(8px);
+      transition: left 0.4s cubic-bezier(0.77, 0, 0.175, 1);
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 5px 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar.open {
+      left: 0;
+    }
+
+    .logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 0;
+    }
+
+    .logo img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .logo span {
+      font-weight: 600;
+      font-size: 18px;
+      margin-top: 10px;
+      color: #333;
+      display: none;
+    }
+
+    .sidebar.open .logo span {
+      display: block;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+
+    .sidebar ul li a {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: #333;
+      text-decoration: none;
+      transition: background 0.3s, padding-left 0.3s;
+    }
+
+    .sidebar ul li a:hover {
+      background-color: skyblue;
+      color: #000;
+      padding-left: 30px;
+    }
+
+    .sidebar .icon {
+      font-size: 50px;
+    }
+
+    .sidebar .nav-item {
+      margin-left: 40px;
+      white-space: nowrap;
+      display: none;
+    }
+
+    .sidebar.open .nav-item {
+      display: inline;
+    }
+
+    .hamburger {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 15px;
+      left: 10px;
+      background: linear-gradient(to right, #795548, #d7b899);
+      padding: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 9px rgba(0, 0, 0, 0.12);
+      z-index: 1100;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .hamburger.open {
+      transform: rotate(90deg);
+    }
+
+    .hamburger i {
+      width: 24px;
+      height: 24px;
+      color: #333;
+    }
+
+    #content-area {
+      padding: 4rem 2rem 2rem;
+      margin-left: 0;
+      transition: all 0.3s ease;
+    }
+
+    .grade-title {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .box-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 70px;
+      justify-content: center;
+    }
+
+    .box {
+     background-color: #f0f0f0;
+     padding: 90px;
+     width: 300px;
+     border-radius: 10px;
+     text-align: center;
+     cursor: pointer;
+     transition: all 0.3s ease;
+     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+     opacity: 0;
+     transform: translateY(20px);
+     animation: fadeInUp 0.6s ease forwards;
+  }
+
+    .box:nth-child(1) { animation-delay: 0.1s; }
+    .box:nth-child(2) { animation-delay: 0.3s; }
+    .box:nth-child(3) { animation-delay: 0.5s; }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .box:hover {
+      transform: scale(1.05);
+      background-color: #e2e2e2;
+    }
+
+    #box-1, #box-2, #box-3 {
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    #box-1 { background-image: url('junior.png'); }
+    #box-2 { background-image: url('senior.png'); }
+    #box-3 { background-image: url('college.png'); }
+
+    .back-button {
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    .back-button button {
+      padding: 10px 20px;
+      background-color: #7a2c87;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s ease;
+    }
+
+    .back-button button:hover {
+      background-color: #5e1c68;
+    }
+
+    @media (max-width: 768px) {
+      .box {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="hamburger" id="hamburger">
+    <i data-feather="menu"></i>
+  </div>
+
+  <nav class="sidebar" id="sidebar">
+    <div class="logo">
+      <img src="logo.jpeg" alt="Logo" />
+      <span>Speakable</span>
+    </div>
+    <ul>
+      <li><a href="#" class="home"><i data-feather="home" class="icon"></i><span class="nav-item">Home</span></a></li>
+      <li><a href="#" class="profile"><i data-feather="user" class="icon"></i><span class="nav-item">Profile</span></a></li>
+      <li><a href="#" class="about"><i data-feather="book" class="icon"></i><span class="nav-item">Quiz</span></a></li>
+      <li><a href="#" class="contact"><i data-feather="mail" class="icon"></i><span class="nav-item">Contact</span></a></li>
+      <li><a href="#" class="logout"><i data-feather="log-out" class="icon"></i><span class="nav-item">Log out</span></a></li>
+    </ul>
+  </nav>
+
+  <main id="content-area">
+    <h1 class="grade-title">Please select your grade level</h1>
+    <div class="box-container">
+      <div class="box" id="box-1" onclick="navigateWithTransition('file1.html')"></div>
+      <div class="box" id="box-2" onclick="navigateWithTransition('file2.html')"></div>
+      <div class="box" id="box-3" onclick="navigateWithTransition('file3.html')"></div>
+    </div>
+  </main>
+
+  <div id="sidebar-overlay" onclick="closeSidebarAndResetHamburger()"></div>
+
+  <script>feather.replace();
+
+    const sidebar = document.getElementById("sidebar");
+    const hamburger = document.getElementById("hamburger");
+    const overlay = document.getElementById("sidebar-overlay");
+
+    hamburger.addEventListener("click", () => {
+      const isOpen = sidebar.classList.contains("open");
+      if (isOpen) {
+        closeSidebarAndResetHamburger();
+      } else {
+        sidebar.classList.add("open");
+        hamburger.classList.add("open");
+        hamburger.style.transform = "rotate(360deg)";
+        if (overlay) {
+          overlay.style.opacity = "1";
+          overlay.style.visibility = "visible";
+        }
+      }
+      feather.replace();
+    });
+
+    function navigateWithTransition(pageUrl) {
+      document.body.style.transition = "opacity 0.3s ease";
+      document.body.style.opacity = 0;
+      setTimeout(() => { window.location.href = pageUrl; }, 300);
+    }
+
+    function closeSidebarAndResetHamburger() {
+      sidebar.classList.remove("open");
+      hamburger.classList.remove("open"); 
+      hamburger.style.transform = "rotate(0deg)";
+      if (overlay) {
+        overlay.style.opacity = "0";
+        overlay.style.visibility = "hidden";
+      }
+      feather.replace();
+    }
+
+    document.querySelector(".home")?.addEventListener("click", e => {
+      e.preventDefault(); closeSidebarAndResetHamburger(); window.location.href = "home.html";
+    });
+    document.querySelector(".profile")?.addEventListener("click", e => {
+      e.preventDefault(); closeSidebarAndResetHamburger(); window.location.href = "Profile.html";
+    });
+    document.querySelector(".about")?.addEventListener("click", e => {
+      e.preventDefault(); closeSidebarAndResetHamburger(); window.location.href = "quiz.html";
+    });
+    document.querySelector(".contact")?.addEventListener("click", e => {
+      e.preventDefault(); closeSidebarAndResetHamburger(); window.location.href = "CONTACT.html";
+    });
+    document.querySelector(".logout")?.addEventListener("click", e => {
+      e.preventDefault(); closeSidebarAndResetHamburger();
+      localStorage.removeItem("activeUser"); localStorage.removeItem("quizSessionScore");
+      window.location.href = "Account.html"; 
+    });
+
+document.querySelector(".logout")?.addEventListener("click", e => {
+  e.preventDefault();
+  closeSidebarAndResetHamburger();
+  localStorage.removeItem("activeUser");
+  localStorage.removeItem("quizSessionScore");
+  window.location.href = "Account.html"; 
+});
+
+function loadContent(file) {
+  const contentArea = document.getElementById('content-area');
+
+  contentArea.innerHTML = "<p style='text-align:center; padding:20px;'>Loading...</p>";
+
+  if (contentCache[file]) {
+    contentArea.innerHTML = contentCache[file];
+    return;
+  }
+
+  fetch(file)
+    .then(response => {
+      if (!response.ok) throw new Error("File not found: " + file);
+      return response.text();
+    })
+    .then(html => {
+      contentCache[file] = html; 
+      contentArea.innerHTML = html;
+
+    
+      document.querySelectorAll(".dynamic-script").forEach(s => s.remove());
+
+      
+      const scripts = contentArea.querySelectorAll("script");
+      scripts.forEach(oldScript => {
+        const newScript = document.createElement("script");
+        newScript.classList.add("dynamic-script");
+        if (oldScript.src) {
+          newScript.src = oldScript.src;
+        } else {
+          newScript.textContent = oldScript.textContent;
+        }
+        document.body.appendChild(newScript);
+      });
+    })
+    .catch(err => {
+      console.error("❌ Error loading content:", err);
+      contentArea.innerHTML = "<p style='color:red;text-align:center;'>Failed to load content.</p>";
+    });
+}
+
+
+function handleContinue() {
+  const nickname = document.getElementById("nickname")?.value.trim();
+  const gender = document.querySelector('input[name="gender"]:checked')?.value;
+  const profileImage = document.getElementById("profilePicPreview")?.src;
+
+  if (!nickname || !gender) {
+    alert("Please enter nickname and select gender.");
+    return;
+  }
+
+  const users = JSON.parse(localStorage.getItem("users") || "{}");
+
+  if (users[nickname]) {
+    alert("This account already exists!");
+    return;
+  }
+
+  users[nickname] = { profileImage, gender, score: 0 };
+  localStorage.setItem("users", JSON.stringify(users));
+  localStorage.setItem("activeUser", nickname);
+
+  document.body.style.opacity = "0";
+  setTimeout(() => {
+    window.location.href = "role.html";
+  }, 300);
+}
+</script>
+</body>
+</html>

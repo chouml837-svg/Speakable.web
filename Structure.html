@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create Account</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Arial, sans-serif;
+    background: url('struc.png') no-repeat center center fixed;
+    background-size: cover;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .wrapper {
+    width: 100%;
+    max-width: 350px;
+    padding: 20px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: fadeIn 0.8s ease-in-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .profile-pic {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #ddd;
+    margin: 0 auto 10px;
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .profile-pic::after {
+    content: "+";
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: #fff;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    border: 2px solid #ccc;
+    font-weight: bold;
+    color: #555;
+  }
+  input[type="file"] { display: none; }
+  input[type="text"], input[type="password"], select {
+    width: 80%;
+    padding: 15px;
+    margin-top: 10px;
+    font-size: 16px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    text-align: center;
+  }
+  .gender-select { margin: 15px 0; }
+  #levelSelect {
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+    appearance: none;
+    outline: none;
+    cursor: pointer;
+    border: none;
+    border-radius: 20px;
+    padding: 15px;
+    width: 80%;
+    margin-top: 10px;
+    transition: background 0.3s;
+  }
+  #levelSelect:hover { background-color: #45a049; }
+  #levelSelect option { background-color: white; color: #333; }
+  #levelSelect option:checked { background-color: #4CAF50; color: white; }
+  .note {
+    font-size: 12px;
+    color: #888;
+    margin: 10px 0;
+  }
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .btn-primary { background-color: LightSteelBlue; color: white; }
+  .btn-primary:hover:not(:disabled) { background-color: SteelBlue; }
+  .btn-secondary { background-color: #ccc; color: #333; }
+  .btn-secondary:hover:not(:disabled) { background-color: #bbb; }
+  .btn-primary:disabled, .btn-secondary:disabled { background-color: #aaa; cursor: not-allowed; }
+  .alert-box {
+    background-color: #f44336;
+    color: white;
+    padding: 10px;
+    border-radius: 20px;
+    margin-top: 10px;
+    display: none;
+  }
+  .popup {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+  }
+  .popup-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    width: 300px;
+  }
+  .popup-content h3 { margin-bottom: 15px; }
+  .popup-content label { display: block; margin: 10px 0; font-size: 16px; }
+</style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="profile-pic" id="profilePreview" onclick="document.getElementById('imageInput').click()"></div>
+    <input type="file" id="imageInput" accept="image/*" />
+    <input id="nickname" type="text" placeholder="" maxlength="20"/>
+    <input id="password" type="password" placeholder="Enter a password" maxlength="20"/>
+    <div class="gender-select">
+      <label><input type="radio" name="gender" value="male"> Male</label>
+      <label><input type="radio" name="gender" value="female"> Female</label>
+    </div>
+    <select id="levelSelect">
+      <option value="">Select Level</option>
+      <option value="junior">Junior High</option>
+      <option value="senior">Senior High</option>
+      <option value="college">College</option>
+    </select>
+    <div class="note">Note: We do not collect personal data. This is for app customization only.</div>
+    <button id="saveBtn" class="btn-primary" onclick="handleContinue()">Save and continue</button>
+    <button id="guestBtn" class="btn-secondary" onclick="guestContinue()">Guest</button>
+    <div id="customAlert" class="alert-box"></div>
+  </div>
+  <div id="rolePopup" class="popup">
+    <div class="popup-content">
+      <h3>Select Role</h3>
+      <label><input type="radio" name="role" value="student"> Student</label>
+      <label><input type="radio" name="role" value="teacher"> Teacher</label>
+      <button type="button" class="btn-primary" id="roleBtn" onclick="finalizeRole()">Continue</button>
+    </div>
+  </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyACbKYi7hpqNCiFysWLyt6-eKpsSDdi4W8",
+  authDomain: "speakable-7f5cf.firebaseapp.com",
+  databaseURL: "https://speakable-7f5cf-default-rtdb.firebaseio.com",
+  projectId: "speakable-7f5cf",
+  storageBucket: "speakable-7f5cf.appspot.com",
+  messagingSenderId: "919521788374",
+  appId: "1:919521788374:web:66ddbcea40541e3f052477",
+  measurementId: "G-R94B6X3C3B"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const storage = getStorage(app);
+
+const imageInput = document.getElementById("imageInput");
+const profilePreview = document.getElementById("profilePreview");
+const nicknameInput = document.getElementById("nickname");
+const passwordInput = document.getElementById("password");
+const levelSelect = document.getElementById("levelSelect");
+const alertBox = document.getElementById("customAlert");
+const rolePopup = document.getElementById("rolePopup");
+const roleBtn = document.getElementById("roleBtn");
+const saveBtn = document.getElementById("saveBtn");
+const guestBtn = document.getElementById("guestBtn");
+
+let pendingData = null;
+let guestMode = false;
+let selectedFile = null;
+
+const placeholderText = "Enter a username";
+let idx = 0;
+(function typePlaceholder() {
+  if (idx <= placeholderText.length) {
+    nicknameInput.setAttribute("placeholder", placeholderText.substring(0, idx));
+    idx++;
+    setTimeout(typePlaceholder, 80);
+  }
+})();
+
+imageInput.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  selectedFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    profilePreview.style.backgroundImage = `url('${ev.target.result}')`;
+  };
+  reader.readAsDataURL(file);
+});
+
+function sanitizeKey(str) {
+  return String(str).replace(/[.#$\/\[\]]/g, "_");
+}
+
+function showAlert(message) {
+  alertBox.textContent = message;
+  alertBox.style.display = "block";
+  setTimeout(() => (alertBox.style.display = "none"), 3000);
+}
+
+function setLoading(button, isLoading, normalText, loadingText) {
+  if (isLoading) {
+    button.disabled = true;
+    button.textContent = loadingText;
+  } else {
+    button.disabled = false;
+    button.textContent = normalText;
+  }
+}
+
+async function handleContinue() {
+  const nickname = nicknameInput.value.trim();
+  const password = passwordInput.value.trim();
+  const genderEl = document.querySelector("input[name='gender']:checked");
+  const gradeLevel = levelSelect.value;
+
+  if (!nickname || !password || !genderEl || !gradeLevel) {
+    showAlert("Please fill in all fields.");
+    return;
+  }
+
+  setLoading(saveBtn, true, "Save and continue", "Saving...");
+
+  const safeKey = sanitizeKey(nickname);
+  const userRef = ref(db, `users/${safeKey}`);
+
+  try {
+    const snap = await get(userRef);
+    if (snap.exists()) {
+      showAlert("This username already exists!");
+      return;
+    }
+
+    pendingData = {
+      username: nickname,
+      password: password,
+      gender: genderEl.value,
+      gradeLevel: gradeLevel,
+      quizScore: 0,
+      role: "", 
+      profileImage: ""  
+    };
+
+    guestMode = false;
+    roleBtn.textContent = "Create Account";
+    rolePopup.style.display = "flex";
+  } catch (err) {
+    console.error("Error checking username:", err);
+    showAlert("Error checking username.");
+  } finally {
+    setLoading(saveBtn, false, "Save and continue", "Saving...");
+  }
+}
+
+function guestContinue() {
+  setLoading(guestBtn, true, "Guest", "Loading...");
+  pendingData = {
+    username: "Guest",
+    password: "",
+    gender: "none",
+    gradeLevel: "none",
+    quizScore: 0,
+    role: "guest",
+    profileImage: ""
+  };
+  guestMode = true;
+  roleBtn.textContent = "Continue";
+  rolePopup.style.display = "flex";
+  setTimeout(() => setLoading(guestBtn, false, "Guest", "Loading..."), 600);
+}
+
+rolePopup.addEventListener("click", (e) => {
+  if (e.target === rolePopup) rolePopup.style.display = "none";
+});
+
+async function finalizeRole() {
+  const roleEl = document.querySelector("input[name='role']:checked");
+  if (!roleEl && !guestMode) {
+    alert("Please select a role.");
+    return;
+  }
+
+  const role = guestMode ? "guest" : roleEl.value;
+
+  setLoading(roleBtn, true, guestMode ? "Continue" : "Create Account", guestMode ? "Continuing..." : "Creating...");
+
+  try {
+    let profileUrl = "";
+
+    if (selectedFile && !guestMode) {
+      const filename = `${sanitizeKey(pendingData.username)}_${Date.now()}.jpg`;
+      const storageRef = sRef(storage, `profiles/${filename}`);
+      await uploadBytes(storageRef, selectedFile);
+      profileUrl = await getDownloadURL(storageRef);
+    }
+
+    const finalData = { 
+      ...pendingData, 
+      role: role, 
+      profileImage: profileUrl 
+    };
+
+    if (!guestMode) {
+      const safeKey = sanitizeKey(pendingData.username);
+      await set(ref(db, `users/${safeKey}`), finalData);
+    }
+
+    localStorage.setItem("activeUser", finalData.username);
+    localStorage.setItem("activeUserData", JSON.stringify(finalData));
+
+    rolePopup.style.display = "none";
+    showAlert("Account created successfully!");
+
+    setTimeout(() => {
+      if (role === "student") {
+        window.location.href = "home.html";
+      } else if (role === "teacher") {
+        window.location.href = "admin.html";
+      } else {
+        window.location.href = "Account.html";
+      }
+    }, 600);
+  } catch (err) {
+    console.error("Error saving account:", err);
+    alert("Something went wrong. Check console.");
+  } finally {
+    setLoading(roleBtn, false, guestMode ? "Continue" : "Create Account", guestMode ? "Continuing..." : "Creating...");
+  }
+}
+
+window.handleContinue = handleContinue;
+window.guestContinue = guestContinue;
+window.finalizeRole = finalizeRole;
+</script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Senior Grade Scores</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5deb3;
+    }
+    h1 {
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background: #8b4513;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h1>Scoreboard SENIOR HIGH</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Average Score</th>
+      </tr>
+    </thead>
+    <tbody id="seniorScores">
+      <tr><td colspan="2">Loading...</td></tr>
+    </tbody>
+  </table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyACbKYi7hpqNCiFysWLyt6-eKpsSDdi4W8",
+      authDomain: "speakable-7f5cf.firebaseapp.com",
+      databaseURL: "https://speakable-7f5cf-default-rtdb.firebaseio.com",
+      projectId: "speakable-7f5cf",
+      storageBucket: "speakable-7f5cf.appspot.com",
+      messagingSenderId: "919521788374",
+      appId: "1:919521788374:web:66ddbcea40541e3f052477"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const tableBody = document.getElementById("seniorScores");
+
+    async function loadSeniorScores() {
+      const snap = await get(ref(db, "users"));
+      tableBody.innerHTML = "";
+
+      if (!snap.exists()) {
+        tableBody.innerHTML = "<tr><td colspan='2'>No users found</td></tr>";
+        return;
+      }
+
+      const users = snap.val();
+      let found = false;
+
+      Object.keys(users).forEach(uid => {
+        const u = users[uid];
+
+        if (
+          u.gradeLevel &&
+          u.gradeLevel.toLowerCase().includes("senior") &&
+          (!u.role || u.role.toLowerCase() === "student")
+        ) {
+          found = true;
+          const books = u.booksRead || [];
+          let avgScore = 0;
+          if (books.length > 0) {
+            const totalScore = books.reduce((sum, b) => sum + (b.score || 0), 0);
+            avgScore = (totalScore / books.length).toFixed(1);
+          }
+
+          const row = `<tr>
+            <td>${u.name || uid}</td>
+            <td>${avgScore}</td>
+          </tr>`;
+          tableBody.innerHTML += row;
+        }
+      });
+
+      if (!found) {
+        tableBody.innerHTML = "<tr><td colspan='2'>No senior high students found</td></tr>";
+      }
+    }
+
+    loadSeniorScores();
+  </script>
+</body>
+</html>

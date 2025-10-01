@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Account</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: url('struc.png') no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+    .wrapper {
+      max-width: 400px;
+      width: 100%;
+      margin-top: 40px;
+      background: rgba(255,255,255,0.9);
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+    }
+    .account-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+      position: relative;
+      border: 1px solid #ddd;
+      transition: background 0.2s;
+    }
+    .account-card:hover { background: #f9f9f9; }
+    .account-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .account-info img {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 16px;
+      background: steelblue;
+      color: #fff;
+      transition: 0.3s;
+    }
+    .btn:hover { background: darkblue; }
+    .highlight {
+      border: 2px solid steelblue;
+      background: #f0f8ff;
+    }
+    .menu-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 2;
+    }
+    .menu {
+      display: none;
+      position: absolute;
+      right: 10px;
+      top: 45px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      z-index: 3;
+    }
+    .menu button {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+    }
+    .menu button:hover { background: #f0f0f0; }
+    .fade-in {
+      animation: fadeIn 0.4s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h2>Accounts</h2>
+    <div id="foundAccount"></div>
+    <div id="accountList"></div>
+    <button class="btn" onclick="window.location.href='Structure.html'">+ Create New Account</button>
+    <button class="btn" onclick="window.location.href='search-account.html'">🔍 Find Account</button>
+  </div>
+
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+  import { getDatabase, ref, onChildAdded, onChildRemoved, remove, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyACbKYi7hpqNCiFysWLyt6-eKpsSDdi4W8",
+    authDomain: "speakable-7f5cf.firebaseapp.com",
+    databaseURL: "https://speakable-7f5cf-default-rtdb.firebaseio.com",
+    projectId: "speakable-7f5cf",
+    storageBucket: "speakable-7f5cf.appspot.com",
+    messagingSenderId: "919521788374",
+    appId: "1:919521788374:web:66ddbcea40541e3f052477"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const accountList = document.getElementById("accountList");
+  const foundAccountDiv = document.getElementById("foundAccount");
+
+  function ensureLocalAccount(name) {
+    let myAccounts = JSON.parse(localStorage.getItem("myAccounts") || "[]");
+    if (!myAccounts.includes(name)) {
+      myAccounts.push(name);
+      localStorage.setItem("myAccounts", JSON.stringify(myAccounts));
+    }
+  }
+
+  function renderCard(name, user, activeUser) {
+    const card = document.createElement("div");
+    card.className = "account-card fade-in";
+    if (activeUser === name) card.classList.add("highlight");
+
+    const info = document.createElement("div");
+    info.className = "account-info";
+    info.innerHTML = `
+      <img src="${user.profileImage || 'default.png'}" alt="${name}">
+      <div>
+        <strong>${name}</strong><br>
+        <small>${user.role || 'Unknown'}</small>
+      </div>
+    `;
+
+    const menuBtn = document.createElement("button");
+    menuBtn.className = "menu-btn";
+    menuBtn.innerHTML = "☰";
+
+    const menuContent = document.createElement("div");
+    menuContent.className = "menu";
+
+    const removeBtn = document.createElement("button");
+    removeBtn.textContent = "Remove (Local)";
+    removeBtn.onclick = (e) => {
+      e.stopPropagation();
+      removeLocalAccount(name);
+      menuContent.style.display = "none";
+    };
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "Delete (Online)";
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      deleteAccount(name);
+      menuContent.style.display = "none";
+    };
+
+    menuContent.appendChild(removeBtn);
+    menuContent.appendChild(deleteBtn);
+
+    menuBtn.onclick = (e) => {
+      e.stopPropagation();
+      menuContent.style.display =
+        menuContent.style.display === "block" ? "none" : "block";
+    };
+
+    card.appendChild(info);
+    card.appendChild(menuBtn);
+    card.appendChild(menuContent);
+
+    card.addEventListener("click", (e) => {
+      if (e.target.closest(".menu-btn") || e.target.closest(".menu")) return;
+      localStorage.setItem("activeUser", name);
+      localStorage.setItem("activeUserData", JSON.stringify(user));
+      ensureLocalAccount(name);
+
+      if (user.role && user.role.toLowerCase() === "student") {
+        window.location.href = "home.html";
+      } else if (user.role && user.role.toLowerCase() === "teacher") {
+        window.location.href = "admin.html";
+      } else {
+        alert("No role set for this account.");
+      }
+    });
+
+    return card;
+  }
+
+  function displayAccount(name, user) {
+    const activeUser = localStorage.getItem("activeUser");
+    const card = renderCard(name, user, activeUser);
+
+    if (activeUser === name) {
+      foundAccountDiv.innerHTML = "<h3>Current Account</h3>";
+      foundAccountDiv.appendChild(card);
+    } else {
+      accountList.appendChild(card);
+    }
+  }
+
+  function loadAccounts() {
+    accountList.innerHTML = "";
+    foundAccountDiv.innerHTML = "";
+
+    const activeUser = localStorage.getItem("activeUser");
+    const myAccounts = JSON.parse(localStorage.getItem("myAccounts") || "[]");
+
+    myAccounts.forEach(async (name) => {
+      const snap = await get(ref(db, "users/" + name));
+      if (snap.exists()) {
+        const user = snap.val();
+        localStorage.setItem("user_" + name, JSON.stringify(user));
+        displayAccount(name, user);
+      }
+    });
+  }
+
+  function removeLocalAccount(name) {
+    let myAccounts = JSON.parse(localStorage.getItem("myAccounts") || "[]");
+    myAccounts = myAccounts.filter(acc => acc !== name);
+    localStorage.setItem("myAccounts", JSON.stringify(myAccounts));
+    localStorage.removeItem("user_" + name);
+
+    if (localStorage.getItem("activeUser") === name) {
+      localStorage.removeItem("activeUser");
+      localStorage.removeItem("activeUserData");
+    }
+    alert(`Removed local account "${name}".`);
+    loadAccounts();
+  }
+
+  function deleteAccount(name) {
+    if (confirm(`Delete account "${name}" online?`)) {
+      remove(ref(db, "users/" + name))
+        .then(() => {
+          alert("Account deleted online!");
+          removeLocalAccount(name);
+        })
+        .catch(err => alert("Error: " + err));
+    }
+  }
+
+  // 🔥 Listen for new accounts added in Firebase
+  const usersRef = ref(db, "users");
+  onChildAdded(usersRef, (snap) => {
+    const name = snap.key;
+    const user = snap.val();
+    let myAccounts = JSON.parse(localStorage.getItem("myAccounts") || "[]");
+
+    if (myAccounts.includes(name)) {
+      localStorage.setItem("user_" + name, JSON.stringify(user));
+      displayAccount(name, user);
+    }
+  });
+
+  onChildRemoved(usersRef, (snap) => {
+    loadAccounts();
+  });
+
+  window.addEventListener("storage", () => loadAccounts());
+
+  // 🚀 First load
+  loadAccounts();
+</script>
+</body>
+</html>

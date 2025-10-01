@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track Student Reading Time</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5deb3;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    select {
+      display: block;
+      margin: 0 auto 20px auto;
+      padding: 10px;
+      font-size: 1rem;
+      border: 2px solid #8b4513;
+      border-radius: 6px;
+      background-color: #deb887;
+      color: #000;
+      font-weight: bold;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      text-align: center;
+      cursor: pointer;
+    }
+    select:focus {
+      outline: none;
+      border-color: #a0522d;
+      box-shadow: 0 0 5px rgba(139,69,19,0.5);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background: #8b4513;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h1>Track Student Reading Time</h1>
+
+  <select id="gradeFilter">
+    <option value="college" selected>College</option>
+    <option value="senior">Senior High</option>
+    <option value="junior">Junior High</option>
+  </select>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Student Name</th>
+        <th>Reading Time (minutes)</th>
+      </tr>
+    </thead>
+    <tbody id="readingTimeTable">
+      <tr><td colspan="2">Loading...</td></tr>
+    </tbody>
+  </table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyACbKYi7hpqNCiFysWLyt6-eKpsSDdi4W8",
+      authDomain: "speakable-7f5cf.firebaseapp.com",
+      databaseURL: "https://speakable-7f5cf-default-rtdb.firebaseio.com",
+      projectId: "speakable-7f5cf",
+      storageBucket: "speakable-7f5cf.appspot.com",
+      messagingSenderId: "919521788374",
+      appId: "1:919521788374:web:66ddbcea40541e3f052477"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const tableBody = document.getElementById("readingTimeTable");
+    const gradeFilter = document.getElementById("gradeFilter");
+
+    async function loadReadingTime(grade) {
+      const snap = await get(ref(db, "users"));
+      tableBody.innerHTML = "";
+
+      if (!snap.exists()) {
+        tableBody.innerHTML = "<tr><td colspan='2'>No users found</td></tr>";
+        return;
+      }
+
+      const users = snap.val();
+      let found = false;
+
+      Object.keys(users).forEach(uid => {
+        const u = users[uid];
+        if (u.gradeLevel && u.gradeLevel.toLowerCase().includes(grade)) {
+          found = true;
+          const readingTime = u.readingTime || 0;
+
+          const row = `<tr>
+            <td>${u.name || uid}</td>
+            <td>${readingTime}</td>
+          </tr>`;
+          tableBody.innerHTML += row;
+        }
+      });
+
+      if (!found) {
+        tableBody.innerHTML = `<tr><td colspan="2">No ${grade} students found</td></tr>`;
+      }
+    }
+
+    gradeFilter.addEventListener("change", () => {
+      loadReadingTime(gradeFilter.value);
+    });
+
+    loadReadingTime("college");
+  </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Find Account</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: url('struc.png') no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+    }
+    .box {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      width: 350px;
+      text-align: center;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+      position: relative;
+    }
+    input {
+      width: 90%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: steelblue;
+      color: white;
+      font-size: 16px;
+    }
+    button:hover {
+      background: darkblue;
+    }
+    .account-card {
+      display: none;
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      text-align: left;
+      background: #f9f9f9;
+      cursor: pointer;
+    }
+    .account-card img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+    .account-info {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .popup-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      width: 300px;
+    }
+    .popup-content input {
+      width: 90%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    .back-btn {
+      position: fixed;   
+      top: 10px;
+      left: 10px;
+      width: 50px;      
+      height: 30px;
+      padding: 0;
+      font-size: 16px;  
+      line-height: 30px;
+      text-align: center;
+      background: green;
+      color: white;
+      border: none;
+      border-radius: 10%;
+      cursor: pointer;
+    }
+    .back-btn:hover {
+      background: darkblue;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <button class="back-btn" onclick="window.location.href='Account.html'">Back</button>
+
+    <h2>Find Account</h2>
+    <input type="text" id="searchName" placeholder="Enter account name" />
+    <button onclick="findAccount()">Search</button>
+
+    <div id="accountCard" class="account-card">
+      <img src="https://via.placeholder.com/40" alt="Profile">
+      <div class="account-info">
+        <strong id="accName"></strong><br>
+        <small id="accDetails"></small>
+      </div>
+    </div>
+  </div>
+
+  <div id="passwordPopup" class="popup">
+    <div class="popup-content">
+      <h3>Enter Password</h3>
+      <input type="password" id="passwordInput" placeholder="Password">
+      <button onclick="checkPassword()">Log In</button>
+    </div>
+  </div>
+  
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+  import { getDatabase, ref, get, update, goOnline } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyACbKYi7hpqNCiFysWLyt6-eKpsSDdi4W8",
+    authDomain: "speakable-7f5cf.firebaseapp.com",
+    databaseURL: "https://speakable-7f5cf-default-rtdb.firebaseio.com",
+    projectId: "speakable-7f5cf",
+    storageBucket: "speakable-7f5cf.appspot.com",
+    messagingSenderId: "919521788374",
+    appId: "1:919521788374:web:66ddbcea40541e3f052477"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  goOnline(db);
+
+  let currentUser = null; 
+  let currentName = "";
+
+  async function findAccount() {
+    const name = document.getElementById("searchName").value.trim();
+    const card = document.getElementById("accountCard");
+
+    if (!name) {
+      alert("Please enter an account name.");
+      card.style.display = "none";
+      return;
+    }
+
+    try {
+      const snapshot = await get(ref(db, "users/" + name));
+      if (snapshot.exists()) {
+        currentUser = snapshot.val();
+        currentName = name;
+
+        document.getElementById("accName").textContent = name;
+        document.getElementById("accDetails").textContent = "Account found";
+
+        card.style.display = "block";
+
+        card.onclick = () => {
+          document.getElementById("passwordPopup").style.display = "flex";
+        };
+      } else {
+        card.style.display = "none";
+        alert("Account doesn't exist");
+      }
+    } catch (error) {
+      alert("Error: " + error.message);
+    }
+  }
+
+  async function checkPassword() {
+    const inputPass = document.getElementById("passwordInput").value;
+    if (!currentUser) {
+      alert("No account selected");
+      return;
+    }
+
+    if (inputPass === currentUser.password) {
+      localStorage.setItem("activeUser", currentName);
+      localStorage.setItem("activeUserData", JSON.stringify(currentUser));
+
+      await update(ref(db, "users/" + currentName), {
+        lastLogin: new Date().toISOString()
+      });
+
+      window.location.href = "Account.html";
+    } else {
+      alert("Wrong password!");
+    }
+  }
+
+  window.findAccount = findAccount;
+  window.checkPassword = checkPassword;
+</script>
+</body>
+</html>
